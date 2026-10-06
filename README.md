@@ -70,3 +70,13 @@ Data is local to this browser and origin. It does not sync between devices, and 
 - `src/storage.js`: versioned persistence, validation and conflicting-write protection.
 
 Browser tests emulate elapsed time, reloads and closing/reopening a page, and verify a full Chromium process restart using a persistent browser profile. Actual phone locking is not automated here; the same persisted-timestamp mechanism handles those intervals. Automated browser checks currently run in Chromium, with layouts checked from 360px to 1440px.
+
+## GitHub Pages hosting
+
+The repository includes `.github/workflows/pages.yml`. It installs from the lockfile, runs unit tests, builds the app, and deploys `dist/` to GitHub Pages on pushes to `main`. Production asset URLs are relative, so the app works under `/Trade-timer/`.
+
+One-time repository setup: open **Settings → Pages → Build and deployment → Source**, and choose **GitHub Actions**. Then open **Actions → Deploy Trade Timer to GitHub Pages → Run workflow**, choosing `main` (or rerun the latest deployment if it failed before Pages was enabled).
+
+After a successful deployment, the expected address is **https://thomas-beer-carpentry.github.io/Trade-timer/**. The deployed URL is also shown in the workflow's `github-pages` environment. If the repository is private, GitHub Pages availability depends on its account/organisation plan; do not change repository visibility to work around this without the owner's decision.
+
+Future pushes to `main` deploy automatically. Hosting serves the app; it does not add cloud database sync. Keep using the same site address/browser to retain your locally stored job data.
