@@ -1,0 +1,115 @@
+.cloud-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: #6d8063;
+  border-bottom: 1px solid #e3e7df;
+  margin-bottom: 24px;
+  padding-bottom: 8px;
+}
+.cloud-toolbar .text-button {
+  font-size: 12px;
+}
+.cloud-body {
+  max-height: calc(100dvh - 145px);
+  padding-bottom: 25px;
+}
+.cloud-body .primary {
+  margin-top: 20px;
+}
+.cloud-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 18px 0;
+}
+.cloud-buttons .primary {
+  margin-top: 0;
+}
+.cloud-state {
+  font-weight: 600;
+  font-size: 14px;
+  color: #45663b;
+  margin-top: 15px;
+}
+.account-email {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  margin-top: 20px;
+}
+.cloud-import,
+.cloud-conflict {
+  border-top: 1px solid #e3e7df;
+  padding-top: 22px;
+  margin-top: 24px;
+}
+.cloud-body h3 {
+  font-size: 15px;
+}
+.cloud-body form .text-button {
+  margin-top: 12px;
+}
+.cloud-conflict {
+  background: #fcf7e9;
+  border: 1px solid #e5d9b1;
+  padding: 15px;
+  border-radius: 10px;
+}
+.cloud-body > form > .primary {
+  width: 100%;
+}
+.pwa-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: #728466;
+  margin-bottom: 8px;
+}
+.install-guide {
+  max-width: 100%;
+  flex: 1;
+}
+.install-guide summary {
+  min-height: 44px;
+  line-height: 44px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #45613a;
+}
+.install-guide p {
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 5px 0 12px;
+  max-width: 420px;
+}
+.pwa-offline {
+  font-size: 10px;
+  color: #66874e;
+}
+.pwa-update {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #dce5cf;
+  border-radius: 10px;
+  background: #eef4e5;
+}
+.pwa-update .secondary {
+  min-height: 44px;
+  font-size: 12px;
+  padding: 9px 13px;
+}
+.pwa-update small {
+  font-size: 10px;
+  width: 100%;
+  line-height: 1.6;
+}

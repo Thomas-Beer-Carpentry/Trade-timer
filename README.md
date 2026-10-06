@@ -19,7 +19,7 @@ npm run test:e2e  # real Chromium workflows, including persistence/reopening
 npm run build    # production bundle
 ```
 
-Browser tests use `/usr/bin/chromium` by default. Set `CHROMIUM_PATH` to another installed Chromium executable if needed. The cloud container uses `--no-sandbox` for its isolated test browser; this does not change the app's browser security. All fonts are bundled; running the app requires no third-party APIs or credentials.
+Browser tests use `/usr/bin/chromium` by default. Set `CHROMIUM_PATH` to another installed Chromium executable if needed. The cloud container uses `--no-sandbox` for its isolated test browser; this does not change the app's browser security. All fonts are bundled. Local mode needs no backend; optional private sync uses Supabase Auth and storage. See [cloud and phone setup](supabase/SETUP.md).
 
 ## How to use
 
@@ -53,9 +53,11 @@ Versioned browser localStorage retains jobs, workers, session timestamps, materi
 
 Worker names/rates are copied into each session; later pool edits/removals preserve history. Storage errors are shown instead of claiming success. Corrupt/unsupported data is preserved for recovery; changes from another tab refresh the UI, and stale writes are rejected.
 
-Data is local to this browser and origin. It does not sync between devices, and clearing browser data removes it. Use **Export backup** to download JSON. Do not use private browsing for long-term records. Browser storage can be evicted by device/browser policies; backups protect against this. There is no cloud sync, login, or offline page caching in this version. A page already open calculates without a network connection, but loading it initially requires the host.
+In local mode, data stays in this browser/origin. Optional Supabase sign-in syncs the same private account between phone and computer, with account-specific durable offline caches and revision checks. Original local records are retained and can be explicitly imported into an empty account. Clearing browser data removes unsynced changes; synced records restore after signing in. Export backups before clearing storage. See [setup and conflict resolution](supabase/SETUP.md).
 
-`src/storage.js` provides an adapter boundary for a future cloud-backed store; calculation and timer logic do not depend on browser storage.
+The installable app caches its production shell after the first online visit. Add it through Safari’s Share → Add to Home Screen, or Chrome’s Install app/Add to Home screen menu. Updates require an explicit safe update tap and preserve open forms and active timers.
+
+`src/storage.js` provides the local adapter; `src/cloud-store.js` supplies durable account caches and safe sync; `src/supabase-repository.js` is the cloud boundary. Billing and timestamp logic remain independent.
 
 ## Modules
 
@@ -67,7 +69,13 @@ Data is local to this browser and origin. It does not sync between devices, and 
 - `src/materials.js`: per-entry GST normalisation.
 - `src/markup.js`: exclusive markup rules.
 - `src/calculations.js`: labour aggregation, GST and job totals.
-- `src/storage.js`: versioned persistence, validation and conflicting-write protection.
+- `src/storage.js`: local persistence, validation and conflicting-write protection.
+- `src/cloud-store.js`: private durable cache, sync and conflict recovery.
+- `src/supabase-repository.js`: authenticated database read/revision-checked save.
+- `src/cloud-session.js`: account setup, sign-in, import and sync UI.
+- `src/cloud-config.js`: public project configuration validation.
+- `src/pwa.js`: phone install guidance and safe offline app updates.
+- `supabase/schema.sql`: private storage, RLS and compare-and-swap RPC.
 
 Browser tests emulate elapsed time, reloads and closing/reopening a page, and verify a full Chromium process restart using a persistent browser profile. Actual phone locking is not automated here; the same persisted-timestamp mechanism handles those intervals. Automated browser checks currently run in Chromium, with layouts checked from 360px to 1440px.
 
@@ -79,4 +87,8 @@ One-time repository setup: open **Settings → Pages → Build and deployment �
 
 After a successful deployment, the expected address is **https://thomas-beer-carpentry.github.io/Trade-timer/**. The deployed URL is also shown in the workflow's `github-pages` environment. If the repository is private, GitHub Pages availability depends on its account/organisation plan; do not change repository visibility to work around this without the owner's decision.
 
-Future pushes to `main` deploy automatically. Hosting serves the app; it does not add cloud database sync. Keep using the same site address/browser to retain your locally stored job data.
+Future pushes to `main` deploy automatically. Optional sync requires your Supabase project setup. Keep using the same site address and sign in to the same account on each device. Public Supabase settings can be supplied through repository variables or the app’s Set up sync screen.
+
+## Additional verification
+
+`npm run test:e2e` includes real production service-worker checks and two-device sync workflows against a deterministic API fixture. `bash tests/database-sync.sh` (Docker + Python 3 required) verifies SQL permissions, account isolation, revision checks, concurrent saves and rollback in a disposable PostgreSQL container. The hosted Supabase project/email flow still needs a live setup check.

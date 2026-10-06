@@ -26,6 +26,9 @@ jobs:
       - name: Verify billing and persistence
         run: npm test
       - name: Build application
+        env:
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
         run: npm run build
       - name: Upload static site
         uses: actions/upload-pages-artifact@v5

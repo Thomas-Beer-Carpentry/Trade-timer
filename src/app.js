@@ -1,3 +1,13 @@
+import { initializePwa, pwaControls, handlePwaAction } from "./pwa.js";
+import {
+  initializeCloud,
+  cloudControls,
+  cloudStorageLabel,
+  handleCloudAction,
+  cloudStorageKey,
+  refreshCloudCache,
+  refreshCloud,
+} from "./cloud-session.js";
 import {
   e,
   dateLabel,
@@ -66,7 +76,7 @@ function shell(content) {
   const running = data.jobs.filter((j) => activeSession(j));
   app.innerHTML = `<header class="topbar"><a href="#" class="brand" aria-label="Trade Timer home">${icon("timer")}<span>TRADE<span class="brand-light"> TIMER</span></span></a><span class="currency-label">NZD <span>•</span> GST 15% default</span></header>
  <div class="layout"><aside class="sidebar"><p class="eyebrow">YOUR WORKSPACE</p>${button("jobs", `${icon("jobs")} Jobs`, page === "jobs" ? "nav active" : "nav")}${button("workers", `${icon("workers")} Labour pool`, page === "workers" ? "nav active" : "nav")}<div class="sidebar-note">Built for the tools-down total.<br><span>Labour, materials & GST. Sorted.</span></div></aside>
- <main id="main">${running.length && !selectedJob ? `<div class="active-banner"><span class="live-dot"></span><span>${running.length} job timer${running.length > 1 ? "s" : ""} running</span>${button("open", `View ${icon("arrow")}`, "text-button", `data-id="${running[0].id}"`)}</div>` : ""}${content}</main></div>
+ <main id="main">${pwaControls()}${cloudControls()}${running.length && !selectedJob ? `<div class="active-banner"><span class="live-dot"></span><span>${running.length} job timer${running.length > 1 ? "s" : ""} running</span>${button("open", `View ${icon("arrow")}`, "text-button", `data-id="${running[0].id}"`)}</div>` : ""}${content}</main></div>
  <nav class="bottom-nav" aria-label="Main navigation">${button("jobs", `${icon("jobs")}<span>Jobs</span>`, page === "jobs" ? "nav active" : "nav")}${button("workers", `${icon("workers")}<span>Labour pool</span>`, page === "workers" ? "nav active" : "nav")}</nav>`;
 }
 function render() {
@@ -96,7 +106,7 @@ function renderHome() {
          .join("")}</div>`
      : `<div class="empty-state"><span class="empty-icon">${icon("jobs")}</span><h2>${filter === "completed" ? "No completed jobs yet" : filter === "active" && data.jobs.length ? "No active jobs" : "Your next job starts here"}</h2><p>Create a job, choose your crew, and keep a running total<br class="desktop-only"> from the first hour to the final fixing.</p>${button("new-job", `${icon("plus")} Create a job`, "primary")}</div>`
  }
- <div class="storage-note"><span class="small-dot"></span> Saved on this device · ${button("backup", "Export backup", "text-button")}</div>`);
+ <div class="storage-note"><span class="small-dot"></span> <span data-cloud-status>${e(cloudStorageLabel())}</span> · ${button("backup", "Export backup", "text-button")}</div>`);
 }
 function renderWorkers() {
   selectedJob = null;
@@ -132,7 +142,7 @@ function renderJob() {
      : `<div class="quiet-empty">Timber, fixings, the lot.<br>Add material costs as you go.</div>`
  }</section>
  <section class="panel settings-panel"><div><h2>Markup & GST</h2><p>${j.markup.enabled ? `${rateValue(j.markup.basisPoints)}% on ${j.markup.scope === "entire" ? "entire bill" : "materials only"}` : "No markup applied"} · GST ${rateValue(j.gstBasisPoints)}%</p></div>${button("settings", "Adjust", "secondary")}</section>
- <div class="storage-note"><span class="small-dot"></span> Saved on this device · ${button("backup", "Export backup", "text-button")}</div>
+ <div class="storage-note"><span class="small-dot"></span> <span data-cloud-status>${e(cloudStorageLabel())}</span> · ${button("backup", "Export backup", "text-button")}</div>
  </div></div>`);
 }
 function sessionRow(s) {
@@ -553,6 +563,11 @@ app.addEventListener("click", (event) => {
   }
   if (!control) return;
   const { action, id } = control.dataset;
+  if (handleCloudAction(action)) return;
+  if (action.startsWith("pwa-")) {
+    handlePwaAction(action).catch((error) => notify(error.message));
+    return;
+  }
   try {
     if (action === "jobs" || action === "workers") {
       page = action;
@@ -599,7 +614,15 @@ app.addEventListener("click", (event) => {
   }
 });
 window.addEventListener("storage", (event) => {
-  if (event.key !== STORAGE_KEY) return;
+  if (event.key === cloudStorageKey()) {
+    try {
+      refreshCloudCache();
+    } catch (error) {
+      notify(`Could not read saved account data: ${error.message}`);
+    }
+    return;
+  }
+  if (cloudStorageKey() || event.key !== STORAGE_KEY) return;
   try {
     data = storage.load();
     if (dialog.open) dialog.close();
@@ -637,3 +660,40 @@ setInterval(() => {
     notify(error.message);
   }
 }, 1000);
+
+if (data) {
+  initializePwa({
+    onChange: () => render(),
+    isBusy: () =>
+      dialog.open ||
+      document.querySelector("#cloud-dialog")?.open ||
+      data.jobs.some(activeSession),
+    notify,
+  });
+  initializeCloud({
+    isBusy: () => dialog.open,
+    notify,
+    onStore: (adapter, preserveView = false) => {
+      const next = adapter.load();
+      if (dialog.open) {
+        dialog.close();
+        notify(
+          "Account or browser data changed. Your open form was closed without saving.",
+        );
+      }
+      storage = adapter;
+      data = next;
+      if (!preserveView) {
+        selectedJob = null;
+        page = "jobs";
+      }
+      render();
+    },
+    onData: (next) => {
+      data = next;
+      render();
+    },
+    onStatus: () => {},
+  }).catch((error) => notify(error.message));
+  dialog.addEventListener("close", () => refreshCloud());
+}
